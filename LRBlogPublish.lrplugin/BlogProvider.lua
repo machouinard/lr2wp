@@ -280,12 +280,18 @@ function provider.processRenderedPhotos(functionContext, exportContext)
 
     local photo = rendition.photo
 
+    local flickURL = photo:getPropertyForPlugin("info.regex.lightroom.export.flickr2", "url")
+    flickURL = flickURL:sub(0, -2):reverse()
+    local pos = flickURL:find("/")
+    local flickrID = flickURL:sub(0, pos - 1):reverse()
+
+    local content = "[flickr size=\"large\"]" .. flickrID .. "[/flickr]"
     if rendition.publishedPhotoId == nil then
-      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
+      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), content, categories, tags)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     else
-      local id, link = wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
+      local id, link = wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), content, categories, tags)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     end
