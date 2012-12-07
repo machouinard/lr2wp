@@ -170,12 +170,12 @@ function request(url, method, params)
   if result == nil then
     error(hdrs.error.name)
   else
-    parseXml(result)
+    return parseXml(result)
   end
 end
 
 function wordpress.getBlogs(self)
-  request(self.url, "wp.getUsersBlogs", {
+  return request(self.url, "wp.getUsersBlogs", {
     { type = "string", value = self.username },
     { type = "string", value = self.password },
   })

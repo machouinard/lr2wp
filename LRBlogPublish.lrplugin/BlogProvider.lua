@@ -163,7 +163,12 @@ function provider.sectionsForBottomOfDialog(f, propertyTable)
                 end
                 local wp = Wordpress(url, username.value, password.value)
                 local success, error = LrTasks.pcall(function()
-                  wp:getBlogs()
+                  local blogs = wp:getBlogs()
+                  if #blogs == 0 then
+                    error("No blog found")
+                  elseif #blogs > 1 then
+                    error("Multi-blog systems aren't supported")
+                  end
                 end)
                 if success then
                   LrDialogs.message("Successfully connected to blog")
