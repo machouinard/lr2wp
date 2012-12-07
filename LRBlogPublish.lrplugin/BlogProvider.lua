@@ -211,4 +211,48 @@ end
 
 provider.titleForGoToPublishedCollection = "disable"
 
+function provider.viewForCollectionSettings(f, publishSettings, info)
+  return f:column {
+    bind_to_object = info.collectionSettings,
+    fill_horizontal = 1,
+
+    f:group_box {
+      title = "Post metadata",
+      fill_horizontal = 1,
+
+      f:row {
+        spacing = f:label_spacing(),
+
+        f:static_text {
+          title = "Categories:",
+          alignment = "right",
+          width = LrView.share "label_width",
+        },
+
+        f:edit_field {
+          fill_horizontal = 1,
+          tooltip = "Categories to apply to all posts in this collection",
+          value = bind 'category'
+        }
+      },
+
+      f:row {
+        spacing = f:label_spacing(),
+
+        f:static_text {
+          title = "Tags:",
+          alignment = "right",
+          width = LrView.share "label_width",
+        },
+
+        f:edit_field {
+          fill_horizontal = 1,
+          tooltip = "Tags to apply to all posts in this collection",
+          value = bind 'post_tag'
+        }
+      }
+    }
+  }
+end
+
 return provider
