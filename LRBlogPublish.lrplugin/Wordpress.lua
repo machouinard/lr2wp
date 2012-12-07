@@ -21,25 +21,37 @@ end
 function addParam(builder, param)
   builder:beginBlock("value")
 
-  if param.type == "struct" then
+  local typ = type(param)
+  local value = param
+
+  if typ == "table" then
+    typ = param.type
+    value = param.value
+  elseif typ == "number" then
+    typ = "int"
+  elseif typ ~= "boolean" and typ ~= "string" then
+    error("Unknown param type " .. typ)
+  end
+
+  if typ == "struct" then
     builder:beginBlock("struct")
-    for name,p in ipairs(param.value) do
+    for name,p in pairs(value) do
       builder:beginBlock("member")
       builder:tag("name", name)
       addParam(builder, p)
       builder:endBlock()
     end
     builder:endBlock()
-  elseif param.type == "array" then
+  elseif typ == "array" then
     builder:beginBlock("array")
     builder:beginBlock("data")
-    for i,p in ipairs(param.value) do
+    for i,p in ipairs(value) do
       addParam(builder, p)
     end
     builder:endBlock()
     builder:endBlock()
   else
-    builder:tag(param.type, param.value)
+    builder:tag(typ, value)
   end
 
   builder:endBlock()
@@ -174,10 +186,62 @@ function request(url, method, params)
   end
 end
 
-function wordpress.getBlogs(self)
-  return request(self.url, "wp.getUsersBlogs", {
-    { type = "string", value = self.username },
-    { type = "string", value = self.password },
+function wordpress.getBlog(self)
+  local blogs = request(self.url, "wp.getUsersBlogs", {
+    self.username,
+    self.password,
+  })
+
+  if #blogs == 0 then
+    error("No blog found")
+  elseif #blogs > 1 then
+    error("Multi-blog systems aren't supported")
+  end
+
+  return blogs[1]
+end
+
+function wordpress.newPost(self, blogid, title, content, categories, tags)
+  return request(self.url, "wp.newPost", {
+    blogid,
+    self.username,
+    self.password,
+    { type = "struct", value = {
+      post_title = title,
+      post_content = content,
+      post_excerpt = "",
+      terms = { type = "struct", value = {
+        category = { type = "array", value = categories },
+        post_tag = { type = "array", value = tags },
+      }}
+    }}
+  })
+end
+
+function wordpress.editPost(self, blogid, postid, title, content, categories, tags)
+  return request(self.url, "wp.editPost", {
+    blogid,
+    self.username,
+    self.password,
+    postid,
+    { type = "struct", value = {
+      post_title = title,
+      post_content = content,
+      post_excerpt = "",
+      terms = { type = "struct", value = {
+        category = { type = "array", value = categories },
+        post_tag = { type = "array", value = tags },
+      }}
+    }}
+  })
+end
+
+function wordpress.deletePost(self, blogid, postid)
+  return request(self.url, "wp.deletePost", {
+    blogid,
+    self.username,
+    self.password,
+    postid
   })
 end
 
@@ -187,7 +251,10 @@ function Wordpress(url, username, password)
     username = username,
     password = password,
 
-    getBlogs = wordpress.getBlogs,
+    getBlog = wordpress.getBlog,
     getCategories = wordpress.getCategories,
+    newPost = wordpress.newPost,
+    editPost = wordpress.editPost,
+    deletePost = wordpress.deletePost,
   }
 end

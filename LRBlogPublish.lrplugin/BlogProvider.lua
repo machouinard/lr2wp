@@ -163,12 +163,7 @@ function provider.sectionsForBottomOfDialog(f, propertyTable)
                 end
                 local wp = Wordpress(url, username.value, password.value)
                 local success, error = LrTasks.pcall(function()
-                  local blogs = wp:getBlogs()
-                  if #blogs == 0 then
-                    error("No blog found")
-                  elseif #blogs > 1 then
-                    error("Multi-blog systems aren't supported")
-                  end
+                  wp:getBlog()
                 end)
                 if success then
                   LrDialogs.message("Successfully connected to blog")
@@ -253,6 +248,49 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
       }
     }
   }
+end
+
+function provider.updateExportSettings(exportSettings)
+  -- Minimize rendering
+  exportSettings.LR_format = 'ORIGINAL'
+end
+
+function provider.processRenderedPhotos(functionContext, exportContext)
+  local publishSettings = exportContext.propertyTable
+  local collectionSettings = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings
+
+  local wp = Wordpress(publishSettings.wordpress_url, publishSettings.username, publishSettings.password)
+  local blog = wp:getBlog()
+
+  local scope = exportContext:configureProgress({ title = "Uploading" })
+
+  for i, rendition in exportContext:renditions() do
+    local success, message = rendition:waitForRender()
+
+    if success == false then
+      error(message)
+    end
+
+    local photo = rendition.photo
+
+    if rendition.publishedPhotoId == nil then
+      local id = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
+      rendition:recordPublishedPhotoId(id)
+    else
+      wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
+      rendition:recordPublishedPhotoId(rendition.publishedPhotoId)
+    end
+  end
+end
+
+function provider.deletePhotosFromPublishedCollection(publishSettings, arrayOfPhotoIds, deletedCallback)
+  local wp = Wordpress(publishSettings.wordpress_url, publishSettings.username, publishSettings.password)
+  local blog = wp:getBlog()
+
+  for i, photoId in ipairs(arrayOfPhotoIds) do
+    wp:deletePost(blog.blogid, photoId)
+    deletedCallback(photoId)
+  end
 end
 
 return provider
