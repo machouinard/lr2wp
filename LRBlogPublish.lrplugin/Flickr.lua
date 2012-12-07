@@ -22,7 +22,42 @@ function findChild(node, name)
   return nil
 end
 
+function getChildElements(node)
+  local elements = {}
+
+  for i = 1,node:childCount() do
+    local subnode = node:childAtIndex(i)
+    if subnode:type() == "element" then
+      table.insert(elements, subnode)
+    end
+  end
+
+  return elements
+end
+
 Flickr = {}
+
+function Flickr.getSizes(self, photoID)
+  local url = service .. "&method=flickr.photos.getSizes&photo_id=" .. photoID
+  local result, hdrs = LrHttp.get(url)
+  if result == nil then
+    error(hdrs.error.name)
+  else
+    local sizes = {}
+    local node = LrXml.parseXml(result)
+    local sizes = findChild(node, "sizes")
+    local elements = getChildElements(sizes)
+    for i, element in ipairs(elements) do
+      local attrs = element:attributes()
+      sizes[attrs.label.value] = {
+        height = attrs.height.value,
+        width = attrs.width.value,
+        src = attrs.source.value
+      }
+    end
+    return sizes
+  end
+end
 
 function Flickr.getInfo(self, photoID)
   local url = service .. "&method=flickr.photos.getInfo&photo_id=" .. photoID

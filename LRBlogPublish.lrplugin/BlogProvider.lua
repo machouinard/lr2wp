@@ -281,14 +281,15 @@ function provider.processRenderedPhotos(functionContext, exportContext)
 
     local photo = rendition.photo
 
-    local flickURL = photo:getPropertyForPlugin("info.regex.lightroom.export.flickr2", "url")
-    local flickrID = flickURL:sub(0, -2):reverse()
+    local flickrURL = photo:getPropertyForPlugin("info.regex.lightroom.export.flickr2", "url")
+    local flickrID = flickrURL:sub(0, -2):reverse()
     local pos = flickrID:find("/")
     flickrID = flickrID:sub(0, pos - 1):reverse()
-    local flickrPhoto = Flickr:getInfo(flickrID)
-    local imageURL = "http://farm" .. flickrPhoto.farm.value .. ".staticflickr.com/" .. flickrPhoto.server.value .. "/" .. flickrPhoto.id.value .. "_" .. flickrPhoto.secret.value .. "_b.jpg"
+    local sizes = Flickr:getSizes(flickrID)
+    local imageURL = sizes.Large.src
+    local width = sizes.Large.width
 
-    local content = "[caption id=\"\" align=\"aligncenter\"]<a href=\"" .. flickURL .. "\"><img title=\"\" src=\"" .. imageURL .. "\" alt=\"\"></a> caption[/caption]"
+    local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"title\" src=\"" .. imageURL .. "\" alt=\"alt\" width=\"" .. width .. "\"></a> caption[/caption]"
 
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), content, categories, tags)
