@@ -285,8 +285,9 @@ function provider.processRenderedPhotos(functionContext, exportContext)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     else
-      wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
-      rendition:recordPublishedPhotoId(rendition.publishedPhotoId)
+      local id, link = wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
+      rendition:recordPublishedPhotoId(id)
+      rendition:recordPublishedPhotoUrl(link)
     end
   end
 end

@@ -5,8 +5,13 @@ You can obtain one at http://mozilla.org/MPL/2.0/.
 ------------------------------------------------------------------------------]]
 
 require 'XmlRpc'
+local LrTasks = import 'LrTasks'
 
 local wordpress = { }
+
+function isResult(message, result)
+  return message:sub(-string.len(result)) == result
+end
 
 function wordpress.getBlog(self)
   local blogs = XmlRpc(self.url, "wp.getUsersBlogs", {
@@ -110,7 +115,27 @@ function wordpress.editPost(self, blogid, postid, title, content, categories, ta
   categories = self:convertTerms(blogid, "category", categories)
   tags = self:convertTerms(blogid, "post_tag", tags)
 
-  return XmlRpc(self.url, "wp.editPost", {
+  local success, post = LrTasks.pcall(function()
+    return XmlRpc(self.url, "wp.getPost", {
+      blogid,
+      self.username,
+      self.password,
+      postid,
+      { type = "array", value = {
+        "link"
+      }}
+    })
+  end)
+
+  if not success then
+    if isResult(post, "Invalid post ID.") then
+      return self:newPost(blogid, title, content, categories, tags)
+    else
+      error(post)
+    end
+  end
+
+  XmlRpc(self.url, "wp.editPost", {
     blogid,
     self.username,
     self.password,
@@ -125,15 +150,23 @@ function wordpress.editPost(self, blogid, postid, title, content, categories, ta
       }}
     }}
   })
+
+  return postid, post.link
 end
 
 function wordpress.deletePost(self, blogid, postid)
-  return XmlRpc(self.url, "wp.deletePost", {
-    blogid,
-    self.username,
-    self.password,
-    postid
-  })
+  local success, result = LrTasks.pcall(function()
+    return XmlRpc(self.url, "wp.deletePost", {
+      blogid,
+      self.username,
+      self.password,
+      postid
+    })
+  end)
+
+  if not success and not isResult(result, "Invalid post ID.") then
+    error(result)
+  end
 end
 
 function Wordpress(url, username, password)
