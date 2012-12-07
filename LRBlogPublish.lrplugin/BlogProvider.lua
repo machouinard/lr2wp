@@ -274,8 +274,9 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local photo = rendition.photo
 
     if rendition.publishedPhotoId == nil then
-      local id = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
+      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
       rendition:recordPublishedPhotoId(id)
+      rendition:recordPublishedPhotoUrl(link)
     else
       wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
       rendition:recordPublishedPhotoId(rendition.publishedPhotoId)

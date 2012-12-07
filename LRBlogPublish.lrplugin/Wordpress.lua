@@ -24,7 +24,7 @@ function wordpress.getBlog(self)
 end
 
 function wordpress.newPost(self, blogid, title, content, categories, tags)
-  return XmlRpc(self.url, "wp.newPost", {
+  local id = XmlRpc(self.url, "wp.newPost", {
     blogid,
     self.username,
     self.password,
@@ -38,6 +38,18 @@ function wordpress.newPost(self, blogid, title, content, categories, tags)
       }}
     }}
   })
+
+  local post = XmlRpc(self.url, "wp.getPost", {
+    blogid,
+    self.username,
+    self.password,
+    id,
+    { type = "array", value = {
+      "link"
+    }}
+  })
+
+  return id, post.link
 end
 
 function wordpress.editPost(self, blogid, postid, title, content, categories, tags)
