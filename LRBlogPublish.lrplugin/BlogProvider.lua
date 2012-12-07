@@ -8,6 +8,7 @@ local LrView = import 'LrView'
 local LrTasks = import 'LrTasks'
 local LrDialogs = import 'LrDialogs'
 require 'Wordpress'
+require 'Flickr'
 
 local bind = LrView.bind
 local share = LrView.share
@@ -281,11 +282,14 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local photo = rendition.photo
 
     local flickURL = photo:getPropertyForPlugin("info.regex.lightroom.export.flickr2", "url")
-    flickURL = flickURL:sub(0, -2):reverse()
-    local pos = flickURL:find("/")
-    local flickrID = flickURL:sub(0, pos - 1):reverse()
+    local flickrID = flickURL:sub(0, -2):reverse()
+    local pos = flickrID:find("/")
+    flickrID = flickrID:sub(0, pos - 1):reverse()
+    local flickrPhoto = Flickr:getInfo(flickrID)
+    local imageURL = "http://farm" .. flickrPhoto.farm.value .. ".staticflickr.com/" .. flickrPhoto.server.value .. "/" .. flickrPhoto.id.value .. "_" .. flickrPhoto.secret.value .. "_b.jpg"
 
-    local content = "[flickr size=\"large\"]" .. flickrID .. "[/flickr]"
+    local content = "[caption id=\"\" align=\"aligncenter\"]<a href=\"" .. flickURL .. "\"><img title=\"\" src=\"" .. imageURL .. "\" alt=\"\"></a> caption[/caption]"
+
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), content, categories, tags)
       rendition:recordPublishedPhotoId(id)
