@@ -264,12 +264,8 @@ function provider.processRenderedPhotos(functionContext, exportContext)
 
   local scope = exportContext:configureProgress({ title = "Uploading" })
 
-  for i, rendition in exportContext:renditions() do
-    local success, message = rendition:waitForRender()
-
-    if success == false then
-      error(message)
-    end
+  for i, rendition in exportContext.exportSession:renditions() do
+    rendition:skipRender()
 
     local photo = rendition.photo
 
