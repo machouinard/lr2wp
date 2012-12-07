@@ -288,8 +288,9 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local sizes = Flickr:getSizes(flickrID)
     local imageURL = sizes.Large.src
     local width = sizes.Large.width
+    local title = photo:getFormattedMetadata("title")
 
-    local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"title\" src=\"" .. imageURL .. "\" alt=\"alt\" width=\"" .. width .. "\"></a> caption[/caption]"
+    local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"" .. title .. "\" src=\"" .. imageURL .. "\" alt=\"" .. title .. "\" width=\"" .. width .. "\"></a> " .. title .. "[/caption]"
 
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), content, categories, tags)
