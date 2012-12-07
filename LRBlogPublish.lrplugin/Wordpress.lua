@@ -23,7 +23,61 @@ function wordpress.getBlog(self)
   return blogs[1]
 end
 
+function indexOf(table, value)
+  for i, v in ipairs(table) do
+    if v == value then
+      return i
+    end
+  end
+  return -1
+end
+
+function clone(oldTable)
+  local result = {}
+  for i, v in ipairs(oldTable) do
+    table.insert(result, v)
+  end
+  return result
+end
+
+function wordpress.convertTerms(self, blogid, taxonomy, terms)
+  local termIDs = {}
+
+  local remoteTerms = XmlRpc(self.url, "wp.getTerms", {
+    blogid,
+    self.username,
+    self.password,
+    taxonomy
+  })
+
+  for i, term in ipairs(remoteTerms) do
+    local pos = indexOf(terms, term.slug)
+    if pos >= 0 then
+      table.remove(terms, pos)
+      table.insert(termIDs, term.term_id)
+    end
+  end
+
+  for i, term in ipairs(terms) do
+    table.insert(termIDs, XmlRpc(self.url, "wp.newTerm", {
+      blogid,
+      self.username,
+      self.password,
+      { type = "struct", value = {
+        name = term,
+        taxonomy = taxonomy,
+        slug = term
+      }}
+    }))
+  end
+
+  return termIDs
+end
+
 function wordpress.newPost(self, blogid, title, content, categories, tags)
+  categories = self:convertTerms(blogid, "category", categories)
+  tags = self:convertTerms(blogid, "post_tag", tags)
+
   local id = XmlRpc(self.url, "wp.newPost", {
     blogid,
     self.username,
@@ -53,6 +107,9 @@ function wordpress.newPost(self, blogid, title, content, categories, tags)
 end
 
 function wordpress.editPost(self, blogid, postid, title, content, categories, tags)
+  categories = self:convertTerms(blogid, "category", categories)
+  tags = self:convertTerms(blogid, "post_tag", tags)
+
   return XmlRpc(self.url, "wp.editPost", {
     blogid,
     self.username,
@@ -90,5 +147,6 @@ function Wordpress(url, username, password)
     newPost = wordpress.newPost,
     editPost = wordpress.editPost,
     deletePost = wordpress.deletePost,
+    convertTerms = wordpress.convertTerms,
   }
 end

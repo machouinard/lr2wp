@@ -227,7 +227,7 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
         f:edit_field {
           fill_horizontal = 1,
           tooltip = "Categories to apply to all posts in this collection",
-          value = bind 'category'
+          value = bind 'categories'
         }
       },
 
@@ -243,7 +243,7 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
         f:edit_field {
           fill_horizontal = 1,
           tooltip = "Tags to apply to all posts in this collection",
-          value = bind 'post_tag'
+          value = bind 'tags'
         }
       }
     }
@@ -255,9 +255,20 @@ function provider.updateExportSettings(exportSettings)
   exportSettings.LR_format = 'ORIGINAL'
 end
 
+function split(str)
+  local result = {}
+  for word in str:gmatch("%a+") do
+    table.insert(result, word)
+  end
+  return result
+end
+
 function provider.processRenderedPhotos(functionContext, exportContext)
   local publishSettings = exportContext.propertyTable
   local collectionSettings = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings
+
+  local categories = split(collectionSettings.categories)
+  local tags = split(collectionSettings.tags)
 
   local wp = Wordpress(publishSettings.wordpress_url, publishSettings.username, publishSettings.password)
   local blog = wp:getBlog()
@@ -270,11 +281,11 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local photo = rendition.photo
 
     if rendition.publishedPhotoId == nil then
-      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
+      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     else
-      wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, {}, {})
+      wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), rendition.destinationPath, categories, tags)
       rendition:recordPublishedPhotoId(rendition.publishedPhotoId)
     end
   end
