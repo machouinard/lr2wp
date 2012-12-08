@@ -6,6 +6,7 @@ You can obtain one at http://mozilla.org/MPL/2.0/.
 
 local LrXml = import 'LrXml'
 local LrHttp = import 'LrHttp'
+local LrDate = import 'LrDate'
 
 function addParam(builder, param)
   builder:beginBlock("value")
@@ -40,6 +41,19 @@ function addParam(builder, param)
     builder:endBlock()
     builder:endBlock()
   else
+    if typ == "dateTime.iso8601" then
+      value = LrDate.timeToUserFormat(value, "%Y%m%dT%H:%M:%S")
+      local tz, dst = LrDate.timeZone()
+      tz = tz / 60
+      if tz < 0 then
+        tz = -tz
+        value = value .. "-"
+      else
+        value = value .. "+"
+      end
+      value = value .. string.format("%02d:%02d", math.floor(tz / 60), tz % 60)
+    end
+
     builder:tag(typ, value)
   end
 

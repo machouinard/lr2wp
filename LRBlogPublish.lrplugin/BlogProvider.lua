@@ -6,6 +6,7 @@ You can obtain one at http://mozilla.org/MPL/2.0/.
 
 local LrView = import 'LrView'
 local LrTasks = import 'LrTasks'
+local LrDate = import 'LrDate'
 local LrDialogs = import 'LrDialogs'
 require 'Wordpress'
 require 'Flickr'
@@ -27,6 +28,7 @@ provider.exportPresetFields = {
   { key = 'site_url', default = "http://www.myblog.com/" },
   { key = 'wordpress_url', default = "" },
   { key = 'post_status', default = "draft" },
+  { key = 'post_date', default = "upload" }
 }
 
 function provider.sectionsForBottomOfDialog(f, propertyTable)
@@ -199,7 +201,29 @@ function provider.sectionsForBottomOfDialog(f, propertyTable)
             items = {
               { title = "Draft", value = "draft" },
               { title = "Published", value = "publish" },
-            }
+            },
+            width = LrView.share "popup_width",
+          }
+        },
+
+        f:row {
+          spacing = f:label_spacing(),
+
+          f:static_text {
+            title = "Post date:",
+            alignment = "right",
+            width = LrView.share "label_width",
+          },
+
+          f:popup_menu {
+            value = bind 'post_date',
+            items = {
+              { title = "Date published", value = "publish" },
+              { title = "Date uploaded to Flickr", value = "remote" },
+              { title = "Date last edited", value = "edit" },
+              { title = "Date taken", value = "taken" },
+            },
+            width = LrView.share "popup_width",
           }
         },
       }
@@ -311,9 +335,9 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local flickrID = flickrURL:sub(0, -2):reverse()
     local pos = flickrID:find("/")
     flickrID = flickrID:sub(0, pos - 1):reverse()
-    local sizes = Flickr:getSizes(flickrID)
-    local imageURL = sizes.Large.src
-    local width = sizes.Large.width
+    local flickrSizes = Flickr:getSizes(flickrID)
+    local imageURL = flickrSizes.Large.src
+    local width = flickrSizes.Large.width
     local title = photo:getFormattedMetadata("title")
 
     local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"" .. title .. "\" src=\"" .. imageURL .. "\" alt=\"" .. title .. "\" width=\"" .. width .. "\"></a> " .. title .. "[/caption]"
@@ -325,6 +349,16 @@ function provider.processRenderedPhotos(functionContext, exportContext)
       categories = categories,
       tags = tags
     }
+
+    post.date = LrDate.currentTime()
+    if publishSettings.post_date == "edit" then
+      post.date = photo:getRawMetadata("lastEditTime")
+    elseif publishSettings.post_date == "taken" then
+      post.date = photo:getRawMetadata("dateTimeOriginal")
+    elseif publishSettings.post_date == "remote" then
+      local flickrInfo = Flickr:getInfo(flickrID)
+      post.date = LrDate.timeFromPosixDate(flickrInfo.dates.posted.value)
+    end
 
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, post)

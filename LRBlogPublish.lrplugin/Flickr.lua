@@ -64,9 +64,26 @@ function Flickr.getInfo(self, photoID)
   local result, hdrs = LrHttp.get(url)
   if result == nil then
     error(hdrs.error.name)
-  else
-    local node = LrXml.parseXml(result)
-    local photo = findChild(node, "photo")
-    return photo:attributes()
   end
+
+  local node = LrXml.parseXml(result)
+  local photoNode = findChild(node, "photo")
+  local photo = {}
+  photo.photo = photoNode:attributes()
+  local elements = getChildElements(photoNode)
+  for i, element in ipairs(elements) do
+    if element:name() == "tags" then
+    elseif element:name() == "notes" then
+    elseif element:name() == "location" then
+    elseif element:name() == "urls" then
+    else
+      if element:text() ~= "" then
+        photo[element:name()] = element:text()
+      else
+        photo[element:name()] = element:attributes()
+      end
+    end
+  end
+
+  return photo
 end

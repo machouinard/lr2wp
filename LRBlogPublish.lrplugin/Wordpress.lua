@@ -92,6 +92,7 @@ function wordpress.newPost(self, blogid, post)
       post_content = post.content,
       post_excerpt = "",
       post_status = post.status,
+      post_date = { type = "dateTime.iso8601", value = post.date },
       terms = { type = "struct", value = {
         category = { type = "array", value = categories },
         post_tag = { type = "array", value = tags },
