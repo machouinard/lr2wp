@@ -79,18 +79,19 @@ function wordpress.convertTerms(self, blogid, taxonomy, terms)
   return termIDs
 end
 
-function wordpress.newPost(self, blogid, title, content, categories, tags)
-  categories = self:convertTerms(blogid, "category", categories)
-  tags = self:convertTerms(blogid, "post_tag", tags)
+function wordpress.newPost(self, blogid, post)
+  local categories = self:convertTerms(blogid, "category", post.categories)
+  local tags = self:convertTerms(blogid, "post_tag", post.tags)
 
   local id = XmlRpc(self.url, "wp.newPost", {
     blogid,
     self.username,
     self.password,
     { type = "struct", value = {
-      post_title = title,
-      post_content = content,
+      post_title = post.title,
+      post_content = post.content,
       post_excerpt = "",
+      post_status = post.status,
       terms = { type = "struct", value = {
         category = { type = "array", value = categories },
         post_tag = { type = "array", value = tags },
@@ -98,7 +99,7 @@ function wordpress.newPost(self, blogid, title, content, categories, tags)
     }}
   })
 
-  local post = XmlRpc(self.url, "wp.getPost", {
+  local currentPost = XmlRpc(self.url, "wp.getPost", {
     blogid,
     self.username,
     self.password,
@@ -108,14 +109,14 @@ function wordpress.newPost(self, blogid, title, content, categories, tags)
     }}
   })
 
-  return id, post.link
+  return id, currentPost.link
 end
 
-function wordpress.editPost(self, blogid, postid, title, content, categories, tags)
-  categories = self:convertTerms(blogid, "category", categories)
-  tags = self:convertTerms(blogid, "post_tag", tags)
+function wordpress.editPost(self, blogid, postid, post)
+  local categories = self:convertTerms(blogid, "category", post.categories)
+  local tags = self:convertTerms(blogid, "post_tag", post.tags)
 
-  local success, post = LrTasks.pcall(function()
+  local success, currentPost = LrTasks.pcall(function()
     return XmlRpc(self.url, "wp.getPost", {
       blogid,
       self.username,
@@ -128,10 +129,10 @@ function wordpress.editPost(self, blogid, postid, title, content, categories, ta
   end)
 
   if not success then
-    if isResult(post, "Invalid post ID.") then
-      return self:newPost(blogid, title, content, categories, tags)
+    if isResult(currentPost, "Invalid post ID.") then
+      return self:newPost(blogid, post)
     else
-      error(post)
+      error(currentPost)
     end
   end
 
@@ -141,8 +142,8 @@ function wordpress.editPost(self, blogid, postid, title, content, categories, ta
     self.password,
     postid,
     { type = "struct", value = {
-      post_title = title,
-      post_content = content,
+      post_title = post.title,
+      post_content = post.content,
       post_excerpt = "",
       terms = { type = "struct", value = {
         category = { type = "array", value = categories },

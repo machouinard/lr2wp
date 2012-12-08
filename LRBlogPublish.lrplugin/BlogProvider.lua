@@ -26,6 +26,7 @@ provider.exportPresetFields = {
   { key = 'password', default = "Your password" },
   { key = 'site_url', default = "http://www.myblog.com/" },
   { key = 'wordpress_url', default = "" },
+  { key = 'post_status', default = "draft" },
 }
 
 function provider.sectionsForBottomOfDialog(f, propertyTable)
@@ -178,6 +179,31 @@ function provider.sectionsForBottomOfDialog(f, propertyTable)
         },
       },
     },
+    {
+      title = "Post Metadata",
+
+      f:column {
+        spacing = f:control_spacing(),
+
+        f:row {
+          spacing = f:label_spacing(),
+
+          f:static_text {
+            title = "Post as:",
+            alignment = "right",
+            width = LrView.share "label_width",
+          },
+
+          f:popup_menu {
+            value = bind 'post_status',
+            items = {
+              { title = "Draft", value = "draft" },
+              { title = "Published", value = "publish" },
+            }
+          }
+        },
+      }
+    }
   }
 end
 
@@ -292,12 +318,20 @@ function provider.processRenderedPhotos(functionContext, exportContext)
 
     local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"" .. title .. "\" src=\"" .. imageURL .. "\" alt=\"" .. title .. "\" width=\"" .. width .. "\"></a> " .. title .. "[/caption]"
 
+    local post = {
+      title = photo:getFormattedMetadata("title"),
+      content = content,
+      status = publishSettings.post_status,
+      categories = categories,
+      tags = tags
+    }
+
     if rendition.publishedPhotoId == nil then
-      local id, link = wp:newPost(blog.blogid, photo:getFormattedMetadata("title"), content, categories, tags)
+      local id, link = wp:newPost(blog.blogid, post)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     else
-      local id, link = wp:editPost(blog.blogid, rendition.publishedPhotoId, photo:getFormattedMetadata("title"), content, categories, tags)
+      local id, link = wp:editPost(blog.blogid, rendition.publishedPhotoId, post)
       rendition:recordPublishedPhotoId(id)
       rendition:recordPublishedPhotoUrl(link)
     end
