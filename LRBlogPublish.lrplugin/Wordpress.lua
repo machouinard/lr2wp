@@ -114,9 +114,6 @@ function wordpress.newPost(self, blogid, post)
 end
 
 function wordpress.editPost(self, blogid, postid, post)
-  local categories = self:convertTerms(blogid, "category", post.categories)
-  local tags = self:convertTerms(blogid, "post_tag", post.tags)
-
   local success, currentPost = LrTasks.pcall(function()
     return XmlRpc(self.url, "wp.getPost", {
       blogid,
@@ -136,6 +133,9 @@ function wordpress.editPost(self, blogid, postid, post)
       error(currentPost)
     end
   end
+
+  local categories = self:convertTerms(blogid, "category", post.categories)
+  local tags = self:convertTerms(blogid, "post_tag", post.tags)
 
   XmlRpc(self.url, "wp.editPost", {
     blogid,
