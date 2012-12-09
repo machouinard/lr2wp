@@ -5,6 +5,7 @@ You can obtain one at http://mozilla.org/MPL/2.0/.
 ------------------------------------------------------------------------------]]
 
 local LrApplication = import 'LrApplication'
+local LrTasks = import 'LrTasks'
 
 local Default = {
   name = "Default",
@@ -34,9 +35,18 @@ function getVariableValue(variable, photo, info)
   if info[variable] ~= nil then
     value = info[variable]
   else
-    value = photo:getFormattedMetadata(variable)
-    if value == nil then
-      value = photo:getRawMetadata(variable)
+    local success
+    success, value = LrTasks.pcall(function()
+      return photo:getFormattedMetadata(variable)
+    end)
+    if not success then
+      success, value = LrTasks.pcall(function()
+        return photo:getRawMetadata(variable)
+      end)
+
+      if not success then
+        error("Unknown variable '" .. variable .. "'")
+      end
     end
   end
 
