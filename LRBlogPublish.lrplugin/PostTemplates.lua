@@ -9,7 +9,7 @@ local LrApplication = import 'LrApplication'
 local Default = {
   name = "Default",
   post = {
-    title = "{title}",
+    title = "{title|fileName}",
     content = "[caption align=\"aligncenter\" width=\"{width}\"]<a href=\"{pageurl}\"><img title=\"{title}\" src=\"{imageurl}\" alt=\"{title}\" width=\"{width}\"></a> {title}[/caption]"
   }
 }
@@ -29,21 +29,14 @@ function findFirst(str, patterns, start)
   return foundpos, first
 end
 
-function expandVariable(str, photo, info, currentPos)
-  local pos, pattern = findFirst(str, { "}" }, currentPos)
-
-  if pos == nil then
-    error("Unexpected end of string")
-  end
-
-  local varname = str:sub(currentPos, pos - 1)
+function getVariableValue(variable, photo, info)
   local value
-  if info[varname] ~= nil then
-    value = info[varname]
+  if info[variable] ~= nil then
+    value = info[variable]
   else
-    value = photo:getFormattedMetadata(varname)
+    value = photo:getFormattedMetadata(variable)
     if value == nil then
-      value = photo:getRawMetadata(varname)
+      value = photo:getRawMetadata(variable)
     end
   end
 
@@ -51,7 +44,53 @@ function expandVariable(str, photo, info, currentPos)
     value = ""
   end
 
-  return value, pos + 1
+  return value
+end
+
+function expandVariable(str, photo, info, currentPos)
+  local pos, pattern = findFirst(str, { "}", "|", "?" }, currentPos)
+
+  if pos == nil then
+    error("Unexpected end of template string after " .. str:sub(currentPos - 1))
+  end
+
+  local varname = str:sub(currentPos, pos - 1)
+  local value = getVariableValue(varname, photo, info)
+  currentPos = pos + 1
+
+  if pattern == "|" then
+    -- Allows the simple expansion {title|filename}
+
+    -- Look for the alternate variable name
+    pos, pattern = findFirst(str, { "}" }, currentPos)
+
+    if pos == nil then
+      error("Unexpected end of template string after " .. str:sub(currentPos - 1))
+    end
+
+    -- If the current value is non-empty then just return that
+    if value ~= "" then
+      return value, pos + 1
+    end
+
+    -- Otherwise get the new variable and return that
+    varname = str:sub(currentPos, pos - 1)
+    return getVariableValue(varname, photo, info), pos + 1
+  elseif pattern == "?" then
+    -- Allows the recursive expansion {title?{title}:{filename}}
+
+    local trueStr, falseStr
+    trueStr, currentPos = expandString(str, photo, info, currentPos, ":")
+    falseStr, currentPos = expandString(str, photo, info, currentPos, "}")
+
+    if value ~= "" then
+      return trueStr, currentPos
+    else
+      return falseStr, currentPos
+    end
+  end
+
+  return value, currentPos
 end
 
 function expandString(str, photo, info, currentPos, endPattern)
@@ -68,7 +107,7 @@ function expandString(str, photo, info, currentPos, endPattern)
     local pos, pattern = findFirst(str, patterns, currentPos)
 
     if pos == nil then
-      error("Unexpected end of string")
+      error("Unexpected end of template string after " .. str:sub(currentPos - 1))
     end
 
     -- Found the end of this string sequence
