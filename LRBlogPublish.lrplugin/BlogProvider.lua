@@ -10,6 +10,7 @@ local LrDate = import 'LrDate'
 local LrDialogs = import 'LrDialogs'
 require 'Wordpress'
 require 'Flickr'
+require 'PostTemplates'
 
 local bind = LrView.bind
 local share = LrView.share
@@ -337,14 +338,14 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     flickrID = flickrID:sub(0, pos - 1):reverse()
     local flickrSizes = Flickr:getSizes(flickrID)
     local imageURL = flickrSizes.Large.src
-    local width = flickrSizes.Large.width
-    local title = photo:getFormattedMetadata("title")
 
-    local content = "[caption align=\"aligncenter\" width=\"" .. width .. "\"]<a href=\"" .. flickrURL .. "\"><img title=\"" .. title .. "\" src=\"" .. imageURL .. "\" alt=\"" .. title .. "\" width=\"" .. width .. "\"></a> " .. title .. "[/caption]"
+    local info = {
+      pageurl = photo:getPropertyForPlugin("info.regex.lightroom.export.flickr2", "url"),
+      imageurl = flickrSizes.Large.src,
+      width = flickrSizes.Large.width,
+    }
 
     local post = {
-      title = photo:getFormattedMetadata("title"),
-      content = content,
       status = publishSettings.post_status,
       categories = categories,
       tags = tags
@@ -359,6 +360,8 @@ function provider.processRenderedPhotos(functionContext, exportContext)
       local flickrInfo = Flickr:getInfo(flickrID)
       post.date = LrDate.timeFromPosixDate(flickrInfo.dates.posted.value)
     end
+
+    PostTemplates.applyTemplate(PostTemplates.getTemplate("Default"), photo, info, post)
 
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, post)
