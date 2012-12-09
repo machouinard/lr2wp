@@ -37,7 +37,7 @@ end
 
 Flickr = {}
 
-function Flickr.getSizes(self, photoID)
+function Flickr.getSizes(photoID)
   local url = service .. "&method=flickr.photos.getSizes&photo_id=" .. photoID
   local result, hdrs = LrHttp.get(url)
   if result == nil then
@@ -59,7 +59,7 @@ function Flickr.getSizes(self, photoID)
   end
 end
 
-function Flickr.getInfo(self, photoID)
+function Flickr.getInfo(photoID)
   local url = service .. "&method=flickr.photos.getInfo&photo_id=" .. photoID
   local result, hdrs = LrHttp.get(url)
   if result == nil then

@@ -336,7 +336,7 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     local flickrID = flickrURL:sub(0, -2):reverse()
     local pos = flickrID:find("/")
     flickrID = flickrID:sub(0, pos - 1):reverse()
-    local flickrSizes = Flickr:getSizes(flickrID)
+    local flickrSizes = Flickr.getSizes(flickrID)
     local imageURL = flickrSizes.Large.src
 
     local info = {
@@ -357,7 +357,7 @@ function provider.processRenderedPhotos(functionContext, exportContext)
     elseif publishSettings.post_date == "taken" then
       post.date = photo:getRawMetadata("dateTimeOriginal")
     elseif publishSettings.post_date == "remote" then
-      local flickrInfo = Flickr:getInfo(flickrID)
+      local flickrInfo = Flickr.getInfo(flickrID)
       post.date = LrDate.timeFromPosixDate(flickrInfo.dates.posted.value)
     end
 
