@@ -31,6 +31,11 @@ function findFirst(str, patterns, start)
 end
 
 function getVariableValue(variable, photo, info)
+  -- Special variables for control characters
+  if variable == "{" or variable == "}" or variable == ":" then
+    return variable
+  end
+
   local value
   if info[variable] ~= nil then
     value = info[variable]
@@ -58,7 +63,8 @@ function getVariableValue(variable, photo, info)
 end
 
 function expandVariable(str, photo, info, currentPos)
-  local pos, pattern = findFirst(str, { "}", "|", "?" }, currentPos)
+  -- Find a variable name that is at least one character long
+  local pos, pattern = findFirst(str, { "}", "|", "?" }, currentPos + 1)
 
   if pos == nil then
     error("Unexpected end of template string after " .. str:sub(currentPos - 1))
