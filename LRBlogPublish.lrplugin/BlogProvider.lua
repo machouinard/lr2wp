@@ -259,13 +259,50 @@ end
 provider.titleForGoToPublishedCollection = "disable"
 
 function provider.viewForCollectionSettings(f, publishSettings, info)
+  local success, template = LrTasks.pcall(function()
+    return PostTemplates.getTemplate(info.collectionSettings.template)
+  end)
+
+  if not success then
+    info.collectionSettings.template = "Default"
+  end
+
+  local templates = PostTemplates.getTemplates()
+  local menu_values = {}
+  for i, template in ipairs(templates) do
+    table.insert(menu_values, { title = template.name, value = template.name })
+  end
+
   return f:column {
+    spacing = f:label_spacing(),
     bind_to_object = info.collectionSettings,
     fill_horizontal = 1,
 
     f:group_box {
-      title = "Post metadata",
+      title = "Post Options",
       fill_horizontal = 1,
+
+      f:row {
+        spacing = f:label_spacing(),
+
+        f:static_text {
+          title = "Template:",
+          alignment = "right",
+        },
+
+        f:popup_menu {
+          fill_horizontal = 1,
+          value = bind 'template',
+          items = menu_values,
+        },
+
+        f:push_button {
+          title = "Edit...",
+          enabled = false,
+          action = function()
+          end
+        }
+      },
 
       f:row {
         spacing = f:label_spacing(),
@@ -297,7 +334,7 @@ function provider.viewForCollectionSettings(f, publishSettings, info)
           tooltip = "Tags to apply to all posts in this collection",
           value = bind 'tags'
         }
-      }
+      },
     }
   }
 end
@@ -319,6 +356,7 @@ function provider.processRenderedPhotos(functionContext, exportContext)
   local publishSettings = exportContext.propertyTable
   local collectionSettings = exportContext.publishedCollection:getCollectionInfoSummary().collectionSettings
 
+  local template = PostTemplates.getTemplate(collectionSettings.template)
   local categories = split(collectionSettings.categories)
   local tags = split(collectionSettings.tags)
 
@@ -361,7 +399,7 @@ function provider.processRenderedPhotos(functionContext, exportContext)
       post.date = LrDate.timeFromPosixDate(flickrInfo.dates.posted.value)
     end
 
-    PostTemplates.applyTemplate(PostTemplates.getTemplate("Default"), photo, info, post)
+    PostTemplates.applyTemplate(template, photo, info, post)
 
     if rendition.publishedPhotoId == nil then
       local id, link = wp:newPost(blog.blogid, post)
