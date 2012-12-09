@@ -67,7 +67,7 @@ function expandVariable(str, photo, info, currentPos)
   local pos, pattern = findFirst(str, { "}", "|", "?" }, currentPos + 1)
 
   if pos == nil then
-    error("Unexpected end of template string after " .. str:sub(currentPos - 1))
+    error("Unexpected end of template string, looking for '}' in " .. str:sub(currentPos))
   end
 
   local varname = str:sub(currentPos, pos - 1)
@@ -81,7 +81,7 @@ function expandVariable(str, photo, info, currentPos)
     pos, pattern = findFirst(str, { "}" }, currentPos)
 
     if pos == nil then
-      error("Unexpected end of template string after " .. str:sub(currentPos - 1))
+      error("Unexpected end of template string, looking for '}' in " .. str:sub(currentPos))
     end
 
     -- If the current value is non-empty then just return that
@@ -123,7 +123,7 @@ function expandString(str, photo, info, currentPos, endPattern)
     local pos, pattern = findFirst(str, patterns, currentPos)
 
     if pos == nil then
-      error("Unexpected end of template string after " .. str:sub(currentPos - 1))
+      error("Unexpected end of template string, looking for '" .. endPattern .. "' in '" .. str:sub(currentPos) .. "'")
     end
 
     -- Found the end of this string sequence
