@@ -153,7 +153,7 @@ function wordpress.editPost(self, blogid, postid, post)
     }}
   })
 
-  return postid, post.link
+  return postid, currentPost.link
 end
 
 function wordpress.deletePost(self, blogid, postid)
