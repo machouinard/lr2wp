@@ -8,6 +8,8 @@ local LrView = import 'LrView'
 local LrTasks = import 'LrTasks'
 local LrDate = import 'LrDate'
 local LrDialogs = import 'LrDialogs'
+local LrFunctionContext = import 'LrFunctionContext'
+local LrBinding = import 'LrBinding'
 require 'Wordpress'
 require 'Flickr'
 require 'PostTemplates'
@@ -259,84 +261,106 @@ end
 provider.titleForGoToPublishedCollection = "disable"
 
 function provider.viewForCollectionSettings(f, publishSettings, info)
-  local success, template = LrTasks.pcall(function()
-    return PostTemplates.getTemplate(info.collectionSettings.template)
-  end)
+  return LrFunctionContext.callWithContext('editTemplates', function(context)
+    local properties = LrBinding.makePropertyTable(context)
 
-  if not success then
-    info.collectionSettings.template = "Default"
-  end
+    local success, template = LrTasks.pcall(function()
+      return PostTemplates.getTemplate(info.collectionSettings.template)
+    end)
 
-  local templates = PostTemplates.getTemplates()
-  local menu_values = {}
-  for i, template in ipairs(templates) do
-    table.insert(menu_values, { title = template.name, value = template.name })
-  end
+    if not success then
+      info.collectionSettings.template = "default"
+    end
 
-  return f:column {
-    spacing = f:label_spacing(),
-    bind_to_object = info.collectionSettings,
-    fill_horizontal = 1,
+    local templates = PostTemplates.getTemplates()
+    local menu_values = {}
+    for i, template in ipairs(templates) do
+      table.insert(menu_values, { title = template.name, value = template.id })
+    end
+    properties.templates = menu_values
 
-    f:group_box {
-      title = "Post Options",
+    return f:column {
+      spacing = f:label_spacing(),
+      bind_to_object = info.collectionSettings,
       fill_horizontal = 1,
 
-      f:row {
-        spacing = f:label_spacing(),
+      f:group_box {
+        title = "Post Options",
+        fill_horizontal = 1,
 
-        f:static_text {
-          title = "Template:",
-          alignment = "right",
+        f:row {
+          spacing = f:label_spacing(),
+
+          f:static_text {
+            title = "Template:",
+            alignment = "right",
+            width = LrView.share "label_width",
+          },
+
+          f:popup_menu {
+            fill_horizontal = 1,
+            value = bind 'template',
+            items = bind({
+              key = 'templates',
+              bind_to_object = properties
+            })
+          },
+
+          f:push_button {
+            title = "Edit...",
+            action = function()
+              local success, error = LrTasks.pcall(function()
+                local template = PostTemplates.getTemplate(info.collectionSettings.template)
+                template = PostTemplates.editTemplates(template)
+                templates = PostTemplates.getTemplates()
+                menu_values = {}
+                for i, t in ipairs(templates) do
+                  table.insert(menu_values, { title = t.name, value = t.id })
+                end
+                properties.templates = menu_values
+                info.collectionSettings.template = template.id
+              end)
+              if not success then
+                LrDialogs.showError(error)
+              end
+            end
+          }
         },
 
-        f:popup_menu {
-          fill_horizontal = 1,
-          value = bind 'template',
-          items = menu_values,
+        f:row {
+          spacing = f:label_spacing(),
+
+          f:static_text {
+            title = "Categories:",
+            alignment = "right",
+            width = LrView.share "label_width",
+          },
+
+          f:edit_field {
+            fill_horizontal = 1,
+            tooltip = "Categories to apply to all posts in this collection",
+            value = bind 'categories'
+          }
         },
 
-        f:push_button {
-          title = "Edit...",
-          enabled = false,
-          action = function()
-          end
-        }
-      },
+        f:row {
+          spacing = f:label_spacing(),
 
-      f:row {
-        spacing = f:label_spacing(),
+          f:static_text {
+            title = "Tags:",
+            alignment = "right",
+            width = LrView.share "label_width",
+          },
 
-        f:static_text {
-          title = "Categories:",
-          alignment = "right",
-          width = LrView.share "label_width",
+          f:edit_field {
+            fill_horizontal = 1,
+            tooltip = "Tags to apply to all posts in this collection",
+            value = bind 'tags'
+          }
         },
-
-        f:edit_field {
-          fill_horizontal = 1,
-          tooltip = "Categories to apply to all posts in this collection",
-          value = bind 'categories'
-        }
-      },
-
-      f:row {
-        spacing = f:label_spacing(),
-
-        f:static_text {
-          title = "Tags:",
-          alignment = "right",
-          width = LrView.share "label_width",
-        },
-
-        f:edit_field {
-          fill_horizontal = 1,
-          tooltip = "Tags to apply to all posts in this collection",
-          value = bind 'tags'
-        }
-      },
+      }
     }
-  }
+  end)
 end
 
 function provider.updateExportSettings(exportSettings)
