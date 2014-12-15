@@ -8,13 +8,13 @@ return {
   LrSdkVersion = 4.0,
   LrSdkMinimumVersion = 4.0, -- minimum SDK version required by this plug-in
 
-  LrToolkitIdentifier = "com.fractalbrew.lrblogpublish",
+  LrToolkitIdentifier = "me.chouinard.lrblogpublish",
 
   LrPluginName = LOC "$$$/LRBlogPublish/PluginName=LRBlogPublish",
-  LrPluginInfoUrl = "http://www.fractalbrew.com/labs/lrblogpublish",
+  LrPluginInfoUrl = "https://github.com/machouinard/lr2wp",
 
   LrExportServiceProvider = {
-    title = "Blog",
+    title = "WordPress",
     file = "BlogProvider.lua",
   },
 

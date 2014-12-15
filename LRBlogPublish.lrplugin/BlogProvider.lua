@@ -11,7 +11,6 @@ local LrDialogs = import 'LrDialogs'
 local LrFunctionContext = import 'LrFunctionContext'
 local LrBinding = import 'LrBinding'
 require 'Wordpress'
-require 'Flickr'
 require 'PostTemplates'
 
 local bind = LrView.bind
@@ -19,11 +18,6 @@ local share = LrView.share
 
 local provider = { }
 
--- This makes us a publish service
-provider.supportsIncrementalPublish = 'only'
-
--- Hide all the normal export settings
-provider.showSections = { }
 
 provider.exportPresetFields = {
   { key = 'username', default = "Your username" },
